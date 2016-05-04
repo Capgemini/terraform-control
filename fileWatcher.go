@@ -55,7 +55,7 @@ var (
 // 	}
 // }
 func readFileIfModified(lastMod time.Time) ([]byte, time.Time, error) {
-	filename  = "/Users/Enxebre/.terraform-control/repo-example/planOutput"
+	filename  = "/Users/Enxebre/.terraform-control/repo-Apollo/terraform/aws/public-cloud/planOutput"
 	fi, err := os.Stat(filename)
 	if err != nil {
 		return nil, lastMod, err

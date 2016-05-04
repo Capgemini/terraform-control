@@ -57,9 +57,8 @@ func GetSingletonSafeEnvironment(id int)(*SafeEnvironment){
 
 func (se *SafeEnvironment) Execute(change *Change, command string, status int) (error) {
     se.Lock()
-
 	env := RepoFindEnvironment(se.Id)
-
+    pathToFiles := filepath.Join(GetDataFolder(), "/repo-" + env.Name, env.Path)
 	//TODO: Think about allowing apply any change/rollback.
 	// If running apply assume only last change can be applied
 	if (change == nil) {
@@ -67,15 +66,15 @@ func (se *SafeEnvironment) Execute(change *Change, command string, status int) (
 	}
 
     if err := env.Execute(change, command); err != nil {
-		return err
+		change.Status = 100
+	} else {
+		change.Status = status
 	}
 
-	change.Status = status
-
-	planOutputFile := GetDataFolder()+ "/repo-" + env.Name + "/planOutput"
+	planOutputFile := filepath.Join(pathToFiles, "/planOutput")
 	planOuputContent, err := ioutil.ReadFile(planOutputFile)
 	if err != nil {
-		log.Printf("HERE IT IS: %v", planOutputFile)
+		log.Printf("No output file found: %v", planOutputFile)
 	    log.Fatal(err)
 	}
 	// TODO: consider a better way of doing this by buffering or something
@@ -83,7 +82,7 @@ func (se *SafeEnvironment) Execute(change *Change, command string, status int) (
 	change.PlanOutput = string(planOuputContent)
 
 	if command == "apply" {
-		stateFile := GetDataFolder()+ "/repo-" + env.Name + "/state"
+		stateFile := filepath.Join(pathToFiles, "/state")
 		stateFileContent, err := ioutil.ReadFile(stateFile)
 		if err != nil {
 		    log.Fatal(err)
@@ -177,12 +176,12 @@ func (e *Environment) Execute(change *Change, command ...string) error {
 		},
 	}
 
-	tfUi := NewUi(cliUi)
+	tfUi := NewUi(cliUi, e)
 
 	// Build our executor
 	tf := &terraform.Terraform{
 		Path:      "",
-		Dir:       dataFolder + "/repo-" + e.Name,
+		Dir:       filepath.Join(GetDataFolder(), "/repo-" + e.Name, e.Path),
 		Ui:        tfUi,
 		Variables: vars,
 		Directory: directory,
@@ -196,6 +195,8 @@ func (e *Environment) Execute(change *Change, command ...string) error {
 	err = tf.Execute(command...)
 	if err != nil {
 		err = fmt.Errorf("Error running Terraform: %s", err)
+		log.Printf("Error running terraform: %v", err)
+		return err
 		//infra.State = directory.InfraStatePartial
 	}
 

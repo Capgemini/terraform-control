@@ -7,7 +7,7 @@ import (
 	// "io"
 	"os"
 	"path/filepath"
-
+    "log"
 	"github.com/boltdb/bolt"
 	"encoding/binary"
 )
@@ -165,10 +165,10 @@ func (b *BoltBackend) PutChange(change *Change) error {
 	        }
 
 	        if (env.Repo == change.Repository["ssh_url"] || env.Repo == change.Repository["git_url"] || env.Repo == change.Repository["git_url"] || env.Repo == change.Repository["html_url"]) {
-
+                log.Printf("Triggering environment changes for repo: %v", env.Repo)
 		        safeEnvironment := GetSingletonSafeEnvironment(env.Id)
 				// TODO: Consider similar approach to http://nesv.github.io/golang/2014/02/25/worker-queues-in-go.html
-				go safeEnvironment.Execute(change, "plan", 1)
+                go safeEnvironment.Execute(change, "plan", 1)
 
 				data, err := b.structData(env)
 				if err != nil {

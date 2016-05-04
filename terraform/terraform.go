@@ -97,16 +97,8 @@ func (t *Terraform) Execute(commandRaw ...string) error {
 	// load it up.
 	var stateDir, statePath string
 	if !stateSkip && t.StateId != "" && t.Directory != nil {
-		var err error
-		stateDir = t.Dir
-		if err != nil {
-			return err
-		}
-		// if execHelper.ShouldCleanup() {
-		// 	defer os.RemoveAll(stateDir)
-		// }
 
-		// State path
+		stateDir = t.Dir
 		stateOldPath := filepath.Join(stateDir, "state.old")
 		statePath = filepath.Join(stateDir, "state")
 
@@ -147,13 +139,34 @@ func (t *Terraform) Execute(commandRaw ...string) error {
 	if t.Path != "" {
 		path = t.Path
 	}
-	cmd := exec.Command(path, command...)
+
+
+	// Get terraform modules
+	cmd := exec.Command(path, "get")
+	cmd.Dir = t.Dir
+	err := execHelper.Run(t.Ui, cmd)
+	if err != nil {
+		err = fmt.Errorf("Error running Terraform for getting modules: %s", err)
+	}
+
+	buildModulesScript := "if ls -1 .terraform/modules/*/Makefile >/dev/null 2>&1; then for dir in .terraform/modules/*/Makefile; do make -C $(/usr/bin/dirname $dir); done fi"
+
+	// Hacky hacky to build terraform modules.
+	cmd = exec.Command("/bin/bash", "-c", buildModulesScript)
+	cmd.Dir = t.Dir
+	err = execHelper.Run(t.Ui, cmd)
+	if err != nil {
+		err = fmt.Errorf("Error running Terraform for getting modules: %s", err)
+	}
+
+
+	cmd = exec.Command(path, command...)
 	cmd.Dir = t.Dir
 
 	// Start the Terraform command. If there is an error we just store
 	// the error but can't exit yet because we have to store partial
 	// state if there is any.
-	err := execHelper.Run(t.Ui, cmd)
+	err = execHelper.Run(t.Ui, cmd)
 	if err != nil {
 		err = fmt.Errorf("Error running Terraform: %s", err)
 	}

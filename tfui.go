@@ -11,7 +11,7 @@ import (
 	"os/signal"
 	"strings"
 	"sync"
-
+	"path/filepath"
 	"github.com/hashicorp/otto/ui"
 	"github.com/hashicorp/vault/helper/password"
 	"github.com/mitchellh/cli"
@@ -21,12 +21,12 @@ import (
 var defaultInputReader io.Reader
 var defaultInputWriter io.Writer
 //TODO: This has to be retrieve dynamically form the env/url request
-var path = "/Users/Enxebre/.terraform-control/repo-example/planOutput"
 
-func NewUi(raw cli.Ui) ui.Ui {
+func NewUi(raw cli.Ui, env *Environment) ui.Ui {
 	return &ui.Styled{
 		Ui: &cliUi{
 			CliUi: raw,
+			env: env,
 		},
 	}
 }
@@ -53,8 +53,9 @@ func (u *cliUi) Message(msg string) {
 	u.CliUi.Output(ui.Colorize(msg))
 }
 
-func createFile() {
+func (u *cliUi) createFile() {
 	// detect if file exists
+	path := filepath.Join(GetDataFolder(), "/repo-" + u.env.Name, u.env.Path, "/planOutput")
 	var _, err = os.Stat(path)
 
 	// create file if not exists
@@ -76,8 +77,8 @@ func check(e error) {
 // github.com/mitchellh/cli and github.com/hashicorp/otto/ui
 // We probably want to write our own output capture funcionality
 func (u *cliUi) Raw(msg string) {
-	createFile()
-	var file, err = os.OpenFile(path, os.O_APPEND|os.O_RDWR, 0644)
+	u.createFile()
+	var file, err = os.OpenFile(filepath.Join(GetDataFolder(), "/repo-" + u.env.Name, u.env.Path, "/planOutput"), os.O_APPEND|os.O_RDWR, 0644)
 	check(err)
 
 	defer file.Close()
