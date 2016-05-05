@@ -58,6 +58,17 @@ func GetSingletonSafeEnvironment(id int)(*SafeEnvironment){
 func (se *SafeEnvironment) Execute(change *Change, command string, status int) (error) {
     se.Lock()
 	env := RepoFindEnvironment(se.Id)
+
+	env.Changes = append(env.Changes, change)
+
+	db := &BoltBackend{
+		Dir: filepath.Join(GetDataFolder(), "data"),
+	}
+	derr := db.PutEnvironment(env)
+	if derr != nil {
+		log.Fatal(derr)
+	}
+
     pathToFiles := filepath.Join(GetDataFolder(), "/repo-" + env.Name, env.Path)
 	//TODO: Think about allowing apply any change/rollback.
 	// If running apply assume only last change can be applied
@@ -90,11 +101,9 @@ func (se *SafeEnvironment) Execute(change *Change, command string, status int) (
 		change.State = string(stateFileContent)		
 	}
 
-	db := &BoltBackend{
-		Dir: filepath.Join(GetDataFolder(), "data"),
-	}
-	env.Changes = append(env.Changes, change)
-	derr := db.PutEnvironment(env)
+
+	env.Changes[len(env.Changes)-1] = change
+	derr = db.PutEnvironment(env)
 	if derr != nil {
 		log.Fatal(derr)
 	}
