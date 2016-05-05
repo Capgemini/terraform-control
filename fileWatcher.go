@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"path/filepath"
 	//"text/template"
 	"time"
 
@@ -54,8 +55,8 @@ var (
 // 		log.Fatal(err)
 // 	}
 // }
-func readFileIfModified(lastMod time.Time) ([]byte, time.Time, error) {
-	filename  = "/Users/Enxebre/.terraform-control/repo-Apollo/terraform/aws/public-cloud/planOutput"
+func readFileIfModified(lastMod time.Time, env *Environment) ([]byte, time.Time, error) {
+	filename  = filepath.Join(GetDataFolder(), "/repo-" + env.Name, env.Path, "/planOutput")
 	fi, err := os.Stat(filename)
 	if err != nil {
 		return nil, lastMod, err
@@ -83,7 +84,7 @@ func reader(ws *websocket.Conn) {
 	}
 }
 
-func writer(ws *websocket.Conn, lastMod time.Time) {
+func writer(ws *websocket.Conn, lastMod time.Time, env *Environment) {
 	lastError := ""
 	pingTicker := time.NewTicker(pingPeriod)
 	fileTicker := time.NewTicker(filePeriod)
@@ -98,7 +99,7 @@ func writer(ws *websocket.Conn, lastMod time.Time) {
 			var p []byte
 			var err error
 
-			p, lastMod, err = readFileIfModified(lastMod)
+			p, lastMod, err = readFileIfModified(lastMod, env)
 
 			if err != nil {
 				if s := err.Error(); s != lastError {
@@ -139,7 +140,13 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 		lastMod = time.Unix(0, n)
 	}
 
-	go writer(ws, lastMod)
+	var envId int
+	if envId, err = strconv.Atoi(r.FormValue("envId")); err != nil {
+		log.Println(err)
+	}
+
+	env := RepoFindEnvironment(envId)
+	go writer(ws, lastMod, env)
 	reader(ws)
 }
 
