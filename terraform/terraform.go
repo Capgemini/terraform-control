@@ -132,6 +132,9 @@ func (t *Terraform) Execute(commandRaw ...string) error {
 
 	// Append all the final args
 	command = append(command, commandArgs...)
+	// TODO: We need to redo the way we stream and store terraform output
+	// once we do it we should show color aswell
+	command = append(command, "-no-color")
 
 	// Build the command to execute
 	log.Printf("[DEBUG] executing terraform: %v", command)

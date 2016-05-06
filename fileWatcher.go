@@ -29,7 +29,7 @@ const (
 	pingPeriod = (pongWait * 9) / 10
 
 	// Poll file for changes with this period.
-	filePeriod = 1 * time.Second
+	filePeriod = 300 * time.Millisecond
 )
 
 var (
@@ -104,7 +104,7 @@ func writer(ws *websocket.Conn, lastMod time.Time, env *Environment) {
 			if err != nil {
 				if s := err.Error(); s != lastError {
 					lastError = s
-					p = []byte(lastError)
+					p = []byte("error")
 				}
 			} else {
 				lastError = ""

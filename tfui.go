@@ -15,7 +15,7 @@ import (
 	"github.com/hashicorp/otto/ui"
 	"github.com/hashicorp/vault/helper/password"
 	"github.com/mitchellh/cli"
-
+	// "unicode/utf8"
 )
 
 var defaultInputReader io.Reader
