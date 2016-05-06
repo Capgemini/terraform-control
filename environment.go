@@ -7,13 +7,13 @@ import (
 	"github.com/hashicorp/otto/directory"
 	"github.com/mitchellh/cli"
 	"custom/terraform-control/terraform"
-	"github.com/libgit2/git2go"
 	"os"
 	"fmt"
 	"log"
 	"sync"
 	"io/ioutil"
 	"strconv"
+	"os/exec"
 	)
 
 var safeEnvironments = make(map[int]*SafeEnvironment)
@@ -136,33 +136,48 @@ func (e *Environment) Execute(change *Change, command ...string) error {
 	vars[e.Var2] = e.Val2
 
 	gitRepo := e.Repo
-	repoPath := dataFolder + "/repo-" + e.Name
-	//credentials
-	repo, err := git.OpenRepository(repoPath)
- 	if err != nil {
-        fmt.Println("repo does not exist: creating one ")
-        repo, err = git.Clone(gitRepo, repoPath, &git.CloneOptions{})
-        if err != nil {
-            panic(err)
-        }
+	// repoPath := dataFolder + "/repo-" + e.Name
+	// //credentials
+	// repo, err := git.OpenRepository(repoPath)
+ // 	if err != nil {
+ //        fmt.Println("repo does not exist: creating one ")
+ //        repo, err = git.Clone(gitRepo, repoPath, &git.CloneOptions{})
+ //        if err != nil {
+ //            panic(err)
+ //        }
+	// }
+	// defer repo.Free()
+
+	// commit := (change.HeadCommit.(map[string]interface{})["id"]).(string)
+
+	// oid, err := git.NewOid(commit)
+	// if err != nil {
+	// 	panic(err)
+	// }
+
+	// changeCommit, err := repo.LookupCommit(oid)
+	// if err != nil {
+	// 	panic(err)
+	// }
+
+	// err = repo.ResetToCommit(changeCommit, git.ResetSoft, &git.CheckoutOpts{})
+	// if err != nil {
+	// 	panic(err)
+	// }
+
+	cmd := exec.Command("git", "clone", gitRepo, dataFolder + "/repo-" + e.Name)
+	cmd.Dir = GetDataFolder()
+	err = cmd.Run()
+	if err != nil {
+		log.Printf("Error cloning: %v", err)
 	}
-	defer repo.Free()
 
 	commit := (change.HeadCommit.(map[string]interface{})["id"]).(string)
-
-	oid, err := git.NewOid(commit)
+	cmd = exec.Command("git", "checkout", commit)
+	cmd.Dir = dataFolder + "/repo-" + e.Name
+	err = cmd.Run()
 	if err != nil {
-		panic(err)
-	}
-
-	changeCommit, err := repo.LookupCommit(oid)
-	if err != nil {
-		panic(err)
-	}
-
-	err = repo.ResetToCommit(changeCommit, git.ResetSoft, &git.CheckoutOpts{})
-	if err != nil {
-		panic(err)
+		log.Printf("Error checking out: %v", err)
 	}
 
 	// Build the context
