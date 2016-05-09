@@ -88,6 +88,7 @@ func writer(ws *websocket.Conn, lastMod time.Time, env *Environment) {
 	lastError := ""
 	pingTicker := time.NewTicker(pingPeriod)
 	fileTicker := time.NewTicker(filePeriod)
+	changesChannel := getChangesChannel()
 	defer func() {
 		pingTicker.Stop()
 		fileTicker.Stop()
@@ -95,6 +96,15 @@ func writer(ws *websocket.Conn, lastMod time.Time, env *Environment) {
 	}()
 	for {
 		select {
+		case envId := <-changesChannel:
+				log.Printf("Channel got something: %v", envId)
+				if envId == env.Id {
+					ws.SetWriteDeadline(time.Now().Add(writeWait))
+					data := []byte(strconv.Itoa(envId))
+					if err := ws.WriteMessage(websocket.TextMessage, data); err != nil {
+						return
+					}					
+				}
 		case <-fileTicker.C:
 			var p []byte
 			var err error

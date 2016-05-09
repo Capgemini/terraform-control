@@ -59,20 +59,24 @@ func (se *SafeEnvironment) Execute(change *Change, command string, status int) (
     se.Lock()
 	env := RepoFindEnvironment(se.Id)
 
-	env.Changes = append(env.Changes, change)
+	if command == "plan" {
+		env.Changes = append(env.Changes, change)
+		db := &BoltBackend{
+			Dir: filepath.Join(GetDataFolder(), "data"),
+		}
+		derr := db.PutEnvironment(env)
+		if derr != nil {
+			log.Fatal(derr)
+		}
 
-	db := &BoltBackend{
-		Dir: filepath.Join(GetDataFolder(), "data"),
-	}
-	derr := db.PutEnvironment(env)
-	if derr != nil {
-		log.Fatal(derr)
+		changesChannel := getChangesChannel()
+		changesChannel <- se.Id
 	}
 
     pathToFiles := filepath.Join(GetDataFolder(), "/repo-" + env.Name, env.Path)
 	//TODO: Think about allowing apply any change/rollback.
 	// If running apply assume only last change can be applied
-	if (change == nil) {
+	if change == nil {
 		change = env.Changes[len(env.Changes)-1]
 	}
 
@@ -103,10 +107,14 @@ func (se *SafeEnvironment) Execute(change *Change, command string, status int) (
 
 
 	env.Changes[len(env.Changes)-1] = change
-	derr = db.PutEnvironment(env)
+	db := &BoltBackend{
+		Dir: filepath.Join(GetDataFolder(), "data"),
+	}
+	derr := db.PutEnvironment(env)
 	if derr != nil {
 		log.Fatal(derr)
 	}
+	changesChannel <- se.Id
 
 	os.RemoveAll(GetDataFolder()+ "/repo-" + env.Name)
 	time.Sleep(5*time.Second)
