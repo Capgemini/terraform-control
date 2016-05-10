@@ -26,7 +26,7 @@ type Environment struct {
 	Path      string 	`json:"path"`
 	modified  time.Time `json:"modified"`
 	AutoApply bool		`json:"autoApply"`
-	//TODO: number of variables dynamically
+	//TODO: Handle variables dynamically
 	Var1 string		`json:"var1"`
 	Val1 string		`json:"val1"`
 	Var2 string		`json:"var2"`
@@ -210,7 +210,6 @@ func (e *Environment) Execute(change *Change, command ...string) error {
 
 	tfUi := NewUi(cliUi, e)
 
-	// Build our executor
 	tf := &terraform.Terraform{
 		Path:      "",
 		Dir:       filepath.Join(GetDataFolder(), "/repo-" + e.Name, e.Path),
@@ -229,7 +228,6 @@ func (e *Environment) Execute(change *Change, command ...string) error {
 		err = fmt.Errorf("Error running Terraform: %s", err)
 		log.Printf("Error running terraform: %v", err)
 		return err
-		//infra.State = directory.InfraStatePartial
 	}
 
 	tfUi.Header("Terraform execution complete. Saving results...")

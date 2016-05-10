@@ -49,7 +49,6 @@ func RepoCreateEnvironment(e Environment) Environment {
 	return e
 }
 
-//this is bad, I don't think it passes race condtions
 func RepoCreateChange(c Change) Change {
 	db := &BoltBackend{
 		Dir: filepath.Join(GetDataFolder(), "data"),
@@ -61,20 +60,9 @@ func RepoCreateChange(c Change) Change {
 	return c
 }
 
-//this is bad, I don't think it passes race condtions
 func RepoTerraformAction(action Action) error {
 	safeEnvironment := GetSingletonSafeEnvironment(action.Id)
 	// TODO: Consider similar approach to http://nesv.github.io/golang/2014/02/25/worker-queues-in-go.html
 	go safeEnvironment.Execute(nil, action.Action, 2)
 	return nil
 }
-
-// func RepoDestroyTodo(id int) error {
-// 	for i, t := range todos {
-// 		if t.Id == id {
-// 			todos = append(todos[:i], todos[i+1:]...)
-// 			return nil
-// 		}
-// 	}
-// 	return fmt.Errorf("Could not find Todo with id of %d to delete", id)
-// }

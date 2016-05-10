@@ -94,10 +94,6 @@ func EnvironmentCreate(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-/*
-Test with this curl command:
-curl -H "Content-Type: application/json" -d '{"name":"New Todo"}' http://localhost:8080/todos
-*/
 func ChangesCreate(w http.ResponseWriter, r *http.Request) {
 	var change Change
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
@@ -124,10 +120,6 @@ func ChangesCreate(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-/*
-Test with this curl command:
-curl -H "Content-Type: application/json" -d '{"name":"New Todo"}' http://localhost:8080/todos
-*/
 func TerraformAction(w http.ResponseWriter, r *http.Request) {
 	var action Action
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
@@ -154,10 +146,6 @@ func TerraformAction(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-/*
-Test with this ƒcurl command:
-curl -H "Content-Type: application/json" -d '{"name":"New Todo"}' http://localhost:8080/todos
-*/
 func TerraformOutput(w http.ResponseWriter, r *http.Request) {
 	fw := flushWriter{w: w}
 	if f, ok := w.(http.Flusher); ok {

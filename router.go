@@ -2,7 +2,6 @@ package main
 
 import (
 	"net/http"
-
 	"github.com/gorilla/mux"
 )
 
@@ -13,7 +12,6 @@ func NewRouter() *mux.Router {
 		var handler http.Handler
 
 		handler = route.HandlerFunc
-		//handler = Logger(handler, route.Name)
 
 		router.
 			Methods(route.Method).

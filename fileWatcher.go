@@ -12,9 +12,7 @@ import (
 	"os"
 	"strconv"
 	"path/filepath"
-	//"text/template"
 	"time"
-
 	"github.com/gorilla/websocket"
 )
 
@@ -33,8 +31,6 @@ const (
 )
 
 var (
-	addr      = flag.String("addr", ":8080", "http service address")
-	//homeTempl = template.Must(template.New("").Parse(homeHTML))
 	filename  string
 	upgrader  = websocket.Upgrader{
 		ReadBufferSize:  1024,
@@ -43,18 +39,6 @@ var (
 	}
 )
 
-// func wsServer() {
-// 	flag.Parse()
-// 	if flag.NArg() != 1 {
-// 		log.Fatal("filename not specified")
-// 	}
-// 	filename = flag.Args()[0]
-// 	// http.HandleFunc("/", serveHome)
-// 	http.HandleFunc("/ws", serveWs)
-// 	if err := http.ListenAndServe(*addr, nil); err != nil {
-// 		log.Fatal(err)
-// 	}
-// }
 func readFileIfModified(lastMod time.Time, env *Environment) ([]byte, time.Time, error) {
 	filename  = filepath.Join(GetDataFolder(), "/repo-" + env.Name, env.Path, "/planOutput")
 	fi, err := os.Stat(filename)
@@ -159,67 +143,3 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 	go writer(ws, lastMod, env)
 	reader(ws)
 }
-
-// func serveHome(w http.ResponseWriter, r *http.Request) {
-// 	if r.URL.Path != "/" {
-// 		http.Error(w, "Not found", 404)
-// 		return
-// 	}
-// 	if r.Method != "GET" {
-// 		http.Error(w, "Method not allowed", 405)
-// 		return
-// 	}
-// 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-// 	p, lastMod, err := readFileIfModified(time.Time{})
-// 	if err != nil {
-// 		p = []byte(err.Error())
-// 		lastMod = time.Unix(0, 0)
-// 	}
-// 	var v = struct {
-// 		Host    string
-// 		Data    string
-// 		LastMod string
-// 	}{
-// 		r.Host,
-// 		string(p),
-// 		strconv.FormatInt(lastMod.UnixNano(), 16),
-// 	}
-// 	homeTempl.Execute(w, &v)
-// }
-
-// func main() {
-// 	flag.Parse()
-// 	if flag.NArg() != 1 {
-// 		log.Fatal("filename not specified")
-// 	}
-// 	filename = flag.Args()[0]
-// 	http.HandleFunc("/", serveHome)
-// 	http.HandleFunc("/ws", serveWs)
-// 	if err := http.ListenAndServe(*addr, nil); err != nil {
-// 		log.Fatal(err)
-// 	}
-// }
-
-// const homeHTML = `<!DOCTYPE html>
-// <html lang="en">
-//     <head>
-//         <title>WebSocket Example</title>
-//     </head>
-//     <body>
-//         <pre id="fileData">{{.Data}}</pre>
-//         <script type="text/javascript">
-//             (function() {
-//                 var data = document.getElementById("fileData");
-//                 var conn = new WebSocket("ws://{{.Host}}/ws?lastMod={{.LastMod}}");
-//                 conn.onclose = function(evt) {
-//                     data.textContent = 'Connection closed';
-//                 }
-//                 conn.onmessage = function(evt) {
-//                     console.log('file updated');
-//                     data.textContent = evt.data;
-//                 }
-//             })();
-//         </script>
-//     </body>
-// </html>
-// `
