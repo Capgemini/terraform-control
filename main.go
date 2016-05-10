@@ -11,7 +11,7 @@ const (
 	OutputPrefix = "o:"
 )
 
-var changesChannel chan int = make(chan int)
+var changesChannel chan int = make(chan int, 10)
 
 func getChangesChannel() (chan int) {
 	return changesChannel

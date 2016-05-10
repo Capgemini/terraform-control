@@ -90,7 +90,7 @@ func (t *Terraform) Execute(commandRaw ...string) error {
 
 	// Output needs state but not state-out; more hard-coding
 	//TODO: this was false!!!
-	stateOutSkip := true
+	stateOutSkip := false
 	//stateOutSkip = command[0] == "output"
 
 	// If we care about state, then setup the state directory and
@@ -175,7 +175,7 @@ func (t *Terraform) Execute(commandRaw ...string) error {
 	}
 
 	// Save the state file if we have it.
-	if t.StateId != "" && t.Directory != nil && statePath != "" && !stateOutSkip {
+	if command[0] == "apply" && t.StateId != "" && t.Directory != nil && statePath != "" && !stateOutSkip {
 		f, ferr := os.Open(statePath)
 		if ferr != nil {
 			return fmt.Errorf(
