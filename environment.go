@@ -1,12 +1,10 @@
 package main
 
 import (
-	"time"
 	"path/filepath"
-	"github.com/mitchellh/go-homedir"
-	"github.com/hashicorp/otto/directory"
 	"github.com/mitchellh/cli"
 	"custom/terraform-control/terraform"
+	"github.com/hashicorp/otto/ui"
 	"os"
 	"fmt"
 	"log"
@@ -16,7 +14,12 @@ import (
 	"os/exec"
 	)
 
-var safeEnvironments = make(map[int]*SafeEnvironment)
+var (
+	safeEnvironments = make(map[int]*SafeEnvironment)
+	config 		=	GetConfig()
+	ouputFile 	=	"output" 
+	stateFile 	=	"state"
+	)
 
 type Environment struct {
 	Id        int       `json:"id"`
@@ -24,15 +27,13 @@ type Environment struct {
 	Repo      string    `json:"repo"`
 	Branch 	  string    `json:"branch"`
 	Path      string 	`json:"path"`
-	modified  time.Time `json:"modified"`
 	AutoApply bool		`json:"autoApply"`
 	//TODO: Handle variables dynamically
-	Var1 string		`json:"var1"`
-	Val1 string		`json:"val1"`
-	Var2 string		`json:"var2"`
-	Val2 string		`json:"val2"`
+	Var1 	string		`json:"var1"`
+	Val1 	string		`json:"val1"`
+	Var2 	string		`json:"var2"`
+	Val2 	string		`json:"val2"`
 	Changes	  []*Change
-
 }
 
 type Environments []Environment
@@ -55,145 +56,23 @@ func GetSingletonSafeEnvironment(id int)(*SafeEnvironment){
     return safeEnvironments[id]
 }
 
-func (se *SafeEnvironment) Execute(change *Change, command string, status int) (error) {
-    se.Lock()
-	env := RepoFindEnvironment(se.Id)
-
-	if command == "plan" {
-		env.Changes = append(env.Changes, change)
-		db := &BoltBackend{
-			Dir: filepath.Join(GetDataFolder(), "data"),
-		}
-		derr := db.PutEnvironment(env)
-		if derr != nil {
-			log.Fatal(derr)
-		}
-
-		changesChannel := getChangesChannel()
-		changesChannel <- se.Id
-	}
-
-    pathToFiles := filepath.Join(GetDataFolder(), "/repo-" + env.Name, env.Path)
-	//TODO: Think about allowing apply any change/rollback.
-	// If running apply assume only last change can be applied
-	if change == nil {
-		change = env.Changes[len(env.Changes)-1]
-	}
-
-    if err := env.Execute(change, command); err != nil {
-		change.Status = 100
-	} else {
-		change.Status = status
-	}
-
-	planOutputFile := filepath.Join(pathToFiles, "/planOutput")
-	planOuputContent, err := ioutil.ReadFile(planOutputFile)
-	if err != nil {
-		log.Printf("No output file found: %v", planOutputFile)
-	    log.Fatal(err)
-	}
-	// TODO: consider a better way of doing this by buffering or something
-	// I cant be bothered today as I'm feeling so sick :O
-	change.PlanOutput = string(planOuputContent)
-
-	if command == "apply" {
-		stateFile := filepath.Join(pathToFiles, "/state")
-		stateFileContent, err := ioutil.ReadFile(stateFile)
-		if err != nil {
-		    log.Fatal(err)
-		}
-		change.State = string(stateFileContent)		
-	}
-
-
-	env.Changes[len(env.Changes)-1] = change
-	db := &BoltBackend{
-		Dir: filepath.Join(GetDataFolder(), "data"),
-	}
-	derr := db.PutEnvironment(env)
-	if derr != nil {
-		log.Fatal(derr)
-	}
-	changesChannel <- se.Id
-
-	os.RemoveAll(GetDataFolder()+ "/repo-" + env.Name)
-	time.Sleep(5*time.Second)
-	se.Unlock()
-	return nil
+func (e *Environment) GetPathToRepo()(string) {
+	return filepath.Join(config.RootFolder, e.Name)
 }
 
-func GetDataFolder()(string) {
-	dataFolder, err := homedir.Expand("~/.terraform-control")
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Something went wrong!!!!!: %s", err)
-	}
-	return dataFolder
+func (e *Environment) GetPathToFiles()(string) {
+	return filepath.Join(e.GetPathToRepo(), e.Path)
 }
 
-func (e *Environment) Execute(change *Change, command ...string) error {
+func (e *Environment) GetPathToOuput()(string) {
+	return filepath.Join(e.GetPathToFiles(), ouputFile)
+}
 
-	// Build the variables
-	dataFolder, err := homedir.Expand("~/.terraform-control")
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Something went wrong!!!!!: %s", err)
-	}
+func (e *Environment) GetPathToState()(string) {
+	return filepath.Join(e.GetPathToFiles(), stateFile)
+}
 
-	//TODO: handle variables dynamically 
-	vars := make(map[string]string)
-	vars[e.Var1] = e.Val1
-	vars[e.Var2] = e.Val2
-
-	gitRepo := e.Repo
-	// repoPath := dataFolder + "/repo-" + e.Name
-	// //credentials
-	// repo, err := git.OpenRepository(repoPath)
- // 	if err != nil {
- //        fmt.Println("repo does not exist: creating one ")
- //        repo, err = git.Clone(gitRepo, repoPath, &git.CloneOptions{})
- //        if err != nil {
- //            panic(err)
- //        }
-	// }
-	// defer repo.Free()
-
-	// commit := (change.HeadCommit.(map[string]interface{})["id"]).(string)
-
-	// oid, err := git.NewOid(commit)
-	// if err != nil {
-	// 	panic(err)
-	// }
-
-	// changeCommit, err := repo.LookupCommit(oid)
-	// if err != nil {
-	// 	panic(err)
-	// }
-
-	// err = repo.ResetToCommit(changeCommit, git.ResetSoft, &git.CheckoutOpts{})
-	// if err != nil {
-	// 	panic(err)
-	// }
-
-	cmd := exec.Command("git", "clone", gitRepo, dataFolder + "/repo-" + e.Name)
-	cmd.Dir = GetDataFolder()
-	err = cmd.Run()
-	if err != nil {
-		log.Printf("Error cloning: %v", err)
-	}
-
-	commit := (change.HeadCommit.(map[string]interface{})["id"]).(string)
-	cmd = exec.Command("git", "checkout", commit)
-	cmd.Dir = dataFolder + "/repo-" + e.Name
-	err = cmd.Run()
-	if err != nil {
-		log.Printf("Error checking out: %v", err)
-	}
-
-	// Build the context
-	dataDir := dataFolder
-	directory := &directory.BoltBackend{
-		Dir: filepath.Join(dataDir, "data"),
-	}
-
+func (e *Environment) createUi() (ui.Ui) {
 	cliUi := &cli.ColoredUi{
 		OutputColor: cli.UiColorNone,
 		InfoColor:   cli.UiColorNone,
@@ -209,13 +88,107 @@ func (e *Environment) Execute(change *Change, command ...string) error {
 	}
 
 	tfUi := NewUi(cliUi, e)
+	return tfUi
+}
+
+func (se *SafeEnvironment) Execute(change *Change, action *Action) (error) {
+    se.Lock()
+    defer se.Unlock()
+
+	env := RepoFindEnvironment(se.Id)
+	command := action.Command
+	pathToRepo := env.GetPathToRepo()
+	pathToOuput := env.GetPathToOuput()
+	pathToState := env.GetPathToState()
+
+	if command == "plan" {
+		env.Changes = append(env.Changes, change)
+		derr := config.Persistence.PutEnvironment(env)
+		if derr != nil {
+			log.Fatal(derr)
+		}
+
+		changesChannel := getChangesChannel()
+		changesChannel <- se.Id
+	}
+
+	// TODO: Think about allowing apply any change/rollback.
+	// Hacky Hacky, If running apply assume only last change can be applied
+	if change == nil {
+		change = env.Changes[len(env.Changes)-1]
+	}
+
+    if err := env.Execute(change, command); err != nil {
+		change.Status = action.FailCode
+	} else {
+		change.Status = action.SuccessCode
+	}
+
+	// TODO: consider a better way of doing this by buffering or something
+	// I cant be bothered today as I'm feeling so sick :O
+	planOuputContent, err := ioutil.ReadFile(pathToOuput)
+		if err != nil {
+		    log.Fatal(err)
+		}
+	change.PlanOutput = string(planOuputContent)
+
+	if command == "apply" {
+		stateFileContent, err := ioutil.ReadFile(pathToState)
+		if err != nil {
+		    log.Fatal(err)
+		}
+		change.State = string(stateFileContent)		
+	}
+
+	// Override last change with new info
+	env.Changes[len(env.Changes)-1] = change
+
+	derr := config.Persistence.PutEnvironment(env)
+	if derr != nil {
+		log.Fatal(derr)
+	}
+	changesChannel <- se.Id
+
+	os.RemoveAll(pathToRepo)
+	return nil
+}
+
+func (e *Environment) Execute(change *Change, command ...string) error {
+
+	pathToRepo := e.GetPathToRepo()
+    pathToFiles := e.GetPathToFiles()
+
+	//TODO: handle variables dynamically 
+	vars := make(map[string]string)
+	vars[e.Var1] = e.Val1
+	vars[e.Var2] = e.Val2
+
+	// TODO: Us git2go here
+	// Clone the project
+	cmd := exec.Command("git", "clone", pathToRepo)
+	cmd.Dir = config.RootFolder
+	err := cmd.Run()
+	if err != nil {
+		log.Printf("Error cloning: %v", err)
+	}
+
+	// Checkout to Headcommit
+	commit := (change.HeadCommit.(map[string]interface{})["id"]).(string)
+	cmd = exec.Command("git", "checkout", commit)
+	cmd.Dir = pathToRepo
+	err = cmd.Run()
+	if err != nil {
+		log.Printf("Error checking out: %v", err)
+	}
+
+	tfUi := e.createUi()
 
 	tf := &terraform.Terraform{
 		Path:      "",
-		Dir:       filepath.Join(GetDataFolder(), "/repo-" + e.Name, e.Path),
+		Dir:       pathToFiles,
 		Ui:        tfUi,
 		Variables: vars,
-		Directory: directory,
+		Directory: config.Persistence,
 		StateId:   "env-" + strconv.Itoa(e.Id),
 	}
 

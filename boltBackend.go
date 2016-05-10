@@ -3,19 +3,20 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	//"fmt"
-	// "io"
 	"os"
+	"io"
 	"path/filepath"
-    "log"
 	"github.com/boltdb/bolt"
 	"encoding/binary"
+	"custom/terraform-control/persistence"
 )
 
 var (
 	boltEnvironmentsBucket  = []byte("environments")
+	boltBlobBucket  = []byte("blob")
 	boltBuckets     = [][]byte{
 		boltEnvironmentsBucket,
+		boltBlobBucket,
 	}
 )
 
@@ -27,6 +28,53 @@ type BoltBackend struct {
 	// Directory where data will be written. This directory will be
 	// created if it doesn't exist.
 	Dir string
+}
+
+func (b *BoltBackend) GetBlob(k string) (*persistence.BlobData, error) {
+	db, err := b.db()
+	if err != nil {
+		return nil, err
+	}
+	defer db.Close()
+
+	var data []byte
+	err = db.View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket(boltBlobBucket)
+		data = bucket.Get([]byte(k))
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	if data == nil {
+		return nil, nil
+	}
+
+	// We have to copy the data since it isn't valid once we close the DB
+	data = append([]byte{}, data...)
+
+	return &persistence.BlobData{
+		Key:  k,
+		Data: bytes.NewReader(data),
+	}, nil
+}
+
+func (b *BoltBackend) PutBlob(k string, d *persistence.BlobData) error {
+	db, err := b.db()
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	var buf bytes.Buffer
+	if _, err := io.Copy(&buf, d.Data); err != nil {
+		return err
+	}
+
+	return db.Update(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket(boltBlobBucket)
+		return bucket.Put([]byte(k), buf.Bytes())
+	})
 }
 
 func (b *BoltBackend) GetAllEnvironments() ([]*Environment, error) {
@@ -134,62 +182,11 @@ func (b *BoltBackend) PutEnvironment(environment *Environment) error {
 	})
 }
 
-//get envs with that github repo
-// append commit to changes
-// store files or that change
-func (b *BoltBackend) PutChange(change *Change) error {
-
-	db, err := b.db()
-	if err != nil {
-		return err
-	}
-	defer db.Close()
-
-	return db.Update(func(tx *bolt.Tx) error {
-
-		bucket := tx.Bucket(boltEnvironmentsBucket)
-		bucket, err = bucket.CreateBucketIfNotExists([]byte(
-			boltEnvironmentsBucket))
-		if err != nil {
-			return err
-		}
-
-	    c := bucket.Cursor()
-		var env *Environment
-	    for k, v := c.First(); k != nil; k, v = c.Next() {
-	        //fmt.Printf("key=%s, value=%s\n", k, v)
-	        env = &Environment{}
-	        err := b.structRead(env, v)
-	        if err != nil {
-				return err
-	        }
-
-	        if (env.Repo == change.Repository["ssh_url"] || env.Repo == change.Repository["git_url"] || env.Repo == change.Repository["git_url"] || env.Repo == change.Repository["html_url"]) {
-                log.Printf("Triggering environment changes for repo: %v", env.Repo)
-		        safeEnvironment := GetSingletonSafeEnvironment(env.Id)
-				// TODO: Consider similar approach to http://nesv.github.io/golang/2014/02/25/worker-queues-in-go.html
-                go safeEnvironment.Execute(change, "plan", 1)
-
-				data, err := b.structData(env)
-				if err != nil {
-					return err
-				}
-
-				if bucket.Put(itob(env.Id), data) != nil {
-					return err
-				}
-	        }
-	    }
-		return nil
-	})
-}
-
 func itob(v int) []byte {
     b := make([]byte, 8)
     binary.BigEndian.PutUint64(b, uint64(v))
     return b
 }
-
 
 // db returns the database handle, and sets up the DB if it has never
 // been created.
@@ -200,7 +197,7 @@ func (b *BoltBackend) db() (*bolt.DB, error) {
 	}
 
 	// Create/Open the DB
-	db, err := bolt.Open(filepath.Join(b.Dir, "tf-env.db"), 0644, nil)
+	db, err := bolt.Open(filepath.Join(b.Dir, "environments.db"), 0644, nil)
 	if err != nil {
 		return nil, err
 	}

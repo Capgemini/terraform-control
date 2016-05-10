@@ -5,7 +5,7 @@
 set -e
 
 # This is required by git2go
-export CGO_ENABLED=1
+# export CGO_ENABLED=1
 
 # Get the parent directory of where this script is.
 SOURCE="${BASH_SOURCE[0]}"
@@ -35,8 +35,8 @@ mkdir -p bin/
 
 # If its dev mode, only build for ourself
 if [ "${TFCONTROL_DEV}x" != "x" ]; then
-    XC_OS=$(go env GOOS)
-    XC_ARCH=$(go env GOARCH)
+    XC_OS=linux
+    XC_ARCH=amd64
 fi
 
 # Build!

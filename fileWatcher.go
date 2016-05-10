@@ -5,7 +5,6 @@
 package main
 
 import (
-	"flag"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -40,7 +39,7 @@ var (
 )
 
 func readFileIfModified(lastMod time.Time, env *Environment) ([]byte, time.Time, error) {
-	filename  = filepath.Join(GetDataFolder(), "/repo-" + env.Name, env.Path, "/planOutput")
+	filename  = filepath.Join(config.RootFolder, "/repo-" + env.Name, env.Path, "/planOutput")
 	fi, err := os.Stat(filename)
 	if err != nil {
 		return nil, lastMod, err

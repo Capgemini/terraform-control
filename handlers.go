@@ -94,7 +94,7 @@ func EnvironmentCreate(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func ChangesCreate(w http.ResponseWriter, r *http.Request) {
+func HookHandler(w http.ResponseWriter, r *http.Request) {
 	var change Change
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
 	if err != nil {
@@ -112,7 +112,7 @@ func ChangesCreate(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	t := RepoCreateChange(change)
+	t := RepoHookHandler(change)
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusCreated)
 	if err := json.NewEncoder(w).Encode(t); err != nil {

@@ -1,24 +1,13 @@
 package main
 
-// import "fmt"
-import "path/filepath"
 import "log"
 
-var currentId int
 
-var environments Environments
-
-
-// Give us some seed data
-func init() {
-	// RepoCreateTodo(Todo{Name: "Write presentation"})
-	// RepoCreateTodo(Todo{Name: "Host meetup"})
-}
+var (
+	db 	= GetConfig().Persistence
+)
 
 func RepoIndexEnvironments() []*Environment {
-	db := &BoltBackend{
-	Dir: filepath.Join(GetDataFolder(), "data"),
-	}
 	e, derr := db.GetAllEnvironments()
 	if derr != nil {
 		log.Fatal(derr)
@@ -27,9 +16,6 @@ func RepoIndexEnvironments() []*Environment {
 }
 
 func RepoFindEnvironment(id int) *Environment {
-	db := &BoltBackend{
-	Dir: filepath.Join(GetDataFolder(), "data"),
-	}
 	e, derr := db.GetEnvironment(id)
 	if derr != nil {
 		log.Fatal(derr)
@@ -39,9 +25,6 @@ func RepoFindEnvironment(id int) *Environment {
 
 //this is bad, I don't think it passes race condtions
 func RepoCreateEnvironment(e Environment) Environment {
-	db := &BoltBackend{
-		Dir: filepath.Join(GetDataFolder(), "data"),
-	}
 	derr := db.PutEnvironment(&e)
 	if derr != nil {
 		log.Fatal(derr)
@@ -49,11 +32,9 @@ func RepoCreateEnvironment(e Environment) Environment {
 	return e
 }
 
-func RepoCreateChange(c Change) Change {
-	db := &BoltBackend{
-		Dir: filepath.Join(GetDataFolder(), "data"),
-	}
-	derr := db.PutChange(&c)
+func RepoHookHandler(c Change) Change {
+	derr := c.handleHook(db)
+
 	if derr != nil {
 		log.Fatal(derr)
 	}
@@ -63,6 +44,6 @@ func RepoCreateChange(c Change) Change {
 func RepoTerraformAction(action Action) error {
 	safeEnvironment := GetSingletonSafeEnvironment(action.Id)
 	// TODO: Consider similar approach to http://nesv.github.io/golang/2014/02/25/worker-queues-in-go.html
-	go safeEnvironment.Execute(nil, action.Action, 2)
+	go safeEnvironment.Execute(nil, action.SetExitCodes())
 	return nil
 }

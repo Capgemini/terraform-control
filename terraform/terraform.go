@@ -3,15 +3,14 @@ package terraform
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
 
+	"custom/terraform-control/persistence"
 	"github.com/hashicorp/go-version"
-	"github.com/hashicorp/otto/directory"
 	execHelper "github.com/hashicorp/otto/helper/exec"
 	"github.com/hashicorp/otto/ui"
 )
@@ -37,19 +36,8 @@ type Terraform struct {
 	// Variables is a list of variables to pass to Terraform.
 	Variables map[string]string
 
-	// Directory can be set to point to a directory where data can be
-	// stored. If this is set, then the state will be loaded/stored here
-	// automatically.
-	//
-	// StateId is the identifier used to load/store the state from
-	// blob storage. If this is empty, state won't be loaded or stored
-	// automatically.
-	//
-	// It is highly recommended to use this instead of manually attempting
-	// to manage state since this will properly handle storing the state
-	// in the issue of an error and will put the state in the pwd in the
-	// case we can't write it to a directory.
-	Directory directory.Backend
+	Directory persistence.Backend
+
 	StateId   string
 }
 
@@ -183,7 +171,7 @@ func (t *Terraform) Execute(commandRaw ...string) error {
 		}
 
 		// Store the state
-		derr := t.Directory.PutBlob(t.StateId, &directory.BlobData{
+		derr := t.Directory.PutBlob(t.StateId, &persistence.BlobData{
 			Data: f,
 		})
 		// Always close the file
@@ -207,37 +195,6 @@ func (t *Terraform) Execute(commandRaw ...string) error {
 	}
 
 	return err
-}
-
-// Outputs reads the outputs from the configured directory storage.
-func (t *Terraform) Outputs() (map[string]string, error) {
-	// Make a temporary file to store our state
-	tf, err := ioutil.TempFile("", "tf-control")
-	if err != nil {
-		return nil, err
-	}
-	if execHelper.ShouldCleanup() {
-		defer os.Remove(tf.Name())
-	}
-
-	// Read the state from the directory and put it on disk. Lots of
-	// careful management of file handles here.
-	data, err := t.Directory.GetBlob(t.StateId)
-	if err == nil {
-		if data == nil {
-			return nil, nil
-		}
-
-		_, err = io.Copy(tf, data.Data)
-		data.Close()
-	}
-	tf.Close()
-	if err != nil {
-		return nil, fmt.Errorf("Error loading Terraform state: %s", err)
-	}
-
-	// Read the outputs as normal. Defers will clean up our temp file.
-	return Outputs(tf.Name())
 }
 
 func (t *Terraform) varfile() (string, error) {

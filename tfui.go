@@ -18,8 +18,11 @@ import (
 	// "unicode/utf8"
 )
 
-var defaultInputReader io.Reader
-var defaultInputWriter io.Writer
+var (
+	defaultInputReader io.Reader
+	defaultInputWriter io.Writer
+)
+
 //TODO: This has to be retrieve dynamically form the env/url request
 
 func NewUi(raw cli.Ui, env *Environment) ui.Ui {
@@ -55,7 +58,7 @@ func (u *cliUi) Message(msg string) {
 
 func (u *cliUi) createFile() {
 	// detect if file exists
-	path := filepath.Join(GetDataFolder(), "/repo-" + u.env.Name, u.env.Path, "/planOutput")
+	path := filepath.Join(config.RootFolder, "/repo-" + u.env.Name, u.env.Path, "/planOutput")
 	var _, err = os.Stat(path)
 
 	// create file if not exists
@@ -78,7 +81,7 @@ func check(e error) {
 // We probably want to write our own output capture funcionality
 func (u *cliUi) Raw(msg string) {
 	u.createFile()
-	var file, err = os.OpenFile(filepath.Join(GetDataFolder(), "/repo-" + u.env.Name, u.env.Path, "/planOutput"), os.O_APPEND|os.O_RDWR, 0644)
+	var file, err = os.OpenFile(filepath.Join(config.RootFolder, "/repo-" + u.env.Name, u.env.Path, "/planOutput"), os.O_APPEND|os.O_RDWR, 0644)
 	check(err)
 
 	defer file.Close()

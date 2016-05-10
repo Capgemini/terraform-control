@@ -37,22 +37,16 @@ var routes = Routes{
 		EnvironmentShow,
 	},
 	Route{
-		"ChangesCreate",
+		"HookHandler",
 		"POST",
-		"/api/changes",
-		ChangesCreate,
+		"/api/HookHandler",
+		HookHandler,
 	},
 	Route{
 		"TerraformAction",
 		"POST",
 		"/api/terraform",
 		TerraformAction,
-	},
-	Route{
-		"TerraformOutput",
-		"GET",
-		"/api/terraform/output",
-		TerraformOutput,
 	},
 	Route{
 		"socket",
