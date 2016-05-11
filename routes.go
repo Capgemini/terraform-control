@@ -39,7 +39,7 @@ var routes = Routes{
 	Route{
 		"HookHandler",
 		"POST",
-		"/api/HookHandler",
+		"/api/hookhandler",
 		HookHandler,
 	},
 	Route{

@@ -23,7 +23,7 @@ func (change *Change) handleHook(b *BoltBackend) error {
 	}
 	defer db.Close()
 
-	return db.View(func(tx *bolt.Tx) error {
+	return db.Update(func(tx *bolt.Tx) error {
 
 		bucket := tx.Bucket(boltEnvironmentsBucket)
 		bucket, err = bucket.CreateBucketIfNotExists([]byte(
