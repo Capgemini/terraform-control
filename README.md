@@ -5,7 +5,7 @@ Terraform-Control is a tool for managing and deploying your infrastructure with 
 ## Overview
 
 We have reused loads of the [https://github.com/hashicorp/otto/](Otto) code for for running terraform commands over different environments simlulating an [https://atlas.hashicorp.com/terraform](Atlas) style feature to demonstrate how to use terraform in a collaborative way driven by continuous integration while keeping track of the state of your environment in a centralise way.
-** This is just a PoC and it's obviously missing a lot features to be used in a real environment. **
+**This is just a PoC and it's obviously missing a lot features to be used in a real environment.**
 
 ![terraform-control-diagram](docs/terraform-control-diagram.png)
 
