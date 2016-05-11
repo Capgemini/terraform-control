@@ -14,9 +14,13 @@ import (
 	"os/exec"
 	)
 
+const (
+	ErrorPrefix  = "e:"
+	OutputPrefix = "o:"
+	)
+
 var (
 	safeEnvironments = make(map[int]*SafeEnvironment)
-	config 		=	GetConfig()
 	ouputFile 	=	"output" 
 	stateFile 	=	"state"
 	)
@@ -92,6 +96,7 @@ func (e *Environment) createUi() (ui.Ui) {
 }
 
 func (se *SafeEnvironment) Execute(change *Change, action *Action) (error) {
+    // Agressive locking as we want the same environment to be manipulated only once at a time 
     se.Lock()
     defer se.Unlock()
 

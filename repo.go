@@ -2,13 +2,8 @@ package main
 
 import "log"
 
-
-var (
-	db 	= GetConfig().Persistence
-)
-
 func RepoIndexEnvironments() []*Environment {
-	e, derr := db.GetAllEnvironments()
+	e, derr := config.Persistence.GetAllEnvironments()
 	if derr != nil {
 		log.Fatal(derr)
 	}
@@ -16,7 +11,7 @@ func RepoIndexEnvironments() []*Environment {
 }
 
 func RepoFindEnvironment(id int) *Environment {
-	e, derr := db.GetEnvironment(id)
+	e, derr := config.Persistence.GetEnvironment(id)
 	if derr != nil {
 		log.Fatal(derr)
 	}
@@ -25,7 +20,7 @@ func RepoFindEnvironment(id int) *Environment {
 
 //this is bad, I don't think it passes race condtions
 func RepoCreateEnvironment(e Environment) Environment {
-	derr := db.PutEnvironment(&e)
+	derr := config.Persistence.PutEnvironment(&e)
 	if derr != nil {
 		log.Fatal(derr)
 	}
@@ -33,7 +28,7 @@ func RepoCreateEnvironment(e Environment) Environment {
 }
 
 func RepoHookHandler(c Change) Change {
-	derr := c.handleHook(db)
+	derr := c.handleHook(config.Persistence)
 
 	if derr != nil {
 		log.Fatal(derr)

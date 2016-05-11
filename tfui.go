@@ -18,12 +18,15 @@ import (
 	// "unicode/utf8"
 )
 
+// TODO: this is a hacky, hacky on otto code in order 
+// to write into a file the terraform output by reusing
+// github.com/mitchellh/cli and github.com/hashicorp/otto/ui
+// We want to write our own output managing funcionality
+
 var (
 	defaultInputReader io.Reader
 	defaultInputWriter io.Writer
 )
-
-//TODO: This has to be retrieve dynamically form the env/url request
 
 func NewUi(raw cli.Ui, env *Environment) ui.Ui {
 	return &ui.Styled{
@@ -75,10 +78,6 @@ func check(e error) {
     }
 }
 
-// TODO: this is a hacky, hacky
-// to write into a file the terraform output by reusing
-// github.com/mitchellh/cli and github.com/hashicorp/otto/ui
-// We probably want to write our own output capture funcionality
 func (u *cliUi) Raw(msg string) {
 	u.createFile()
 	var file, err = os.OpenFile(filepath.Join(config.RootFolder, "/repo-" + u.env.Name, u.env.Path, "/planOutput"), os.O_APPEND|os.O_RDWR, 0644)

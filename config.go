@@ -17,10 +17,10 @@ type Config struct {
 	RootFolder    string	
 }
 
-var c *Config
+var config *Config
 
 func init() {
-	c = &Config{
+	config = &Config{
 		Persistence: getPersistenceBackend(),
 		RootFolder: getRootFolder(),
 	}	
@@ -42,6 +42,6 @@ func getPersistenceBackend()(*BoltBackend) {
 }
 
 func GetConfig()(*Config) {
-    return c
+    return config
 }
 

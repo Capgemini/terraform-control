@@ -35,8 +35,8 @@ mkdir -p bin/
 
 # If its dev mode, only build for ourself
 if [ "${TFCONTROL_DEV}x" != "x" ]; then
-    XC_OS=linux
-    XC_ARCH=amd64
+    XC_OS=$(go env GOOS)
+    XC_ARCH=$(go env GOARCH)
 fi
 
 # Build!

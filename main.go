@@ -6,13 +6,9 @@ import (
 	"log"
 )
 
-const (
-	ErrorPrefix  = "e:"
-	OutputPrefix = "o:"
-)
-
+// Hacky for demo purposes for sending changes updates to the server socket
+// so the browser gets updated
 var changesChannel chan int = make(chan int, 10)
-
 func getChangesChannel() (chan int) {
 	return changesChannel
 }
