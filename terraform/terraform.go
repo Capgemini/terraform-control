@@ -9,7 +9,7 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"custom/terraform-control/persistence"
+	"github.com/capgemini/terraform-control/persistence"
 	"github.com/hashicorp/go-version"
 	execHelper "github.com/hashicorp/otto/helper/exec"
 	"github.com/hashicorp/otto/ui"

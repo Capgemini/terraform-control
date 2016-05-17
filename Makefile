@@ -3,11 +3,11 @@ VETARGS?=-asmdecl -atomic -bool -buildtags -copylocks -methods -nilfunc -printf 
 
 default: test
 
-# bin generates the releaseable binaries for Otto
+# bin generates the releaseable binaries
 bin: generate
 	@sh -c "'$(CURDIR)/scripts/build.sh'"
 
-# dev creates binaries for testing Otto locally. These are put
+# dev creates binaries for testing locally. These are put
 # into ./bin/ as well as $GOPATH/bin
 dev: generate
 	@TFCONTROL_DEV=1 sh -c "'$(CURDIR)/scripts/build.sh'"
@@ -35,7 +35,7 @@ test: generate
 # 	fi
 # 	OTTO_ACC=1 go test $(TEST) -v $(TESTARGS) -timeout 90m
 
-# updatedeps installs all the dependencies that Otto needs to run
+# updatedeps installs all the dependencies that needs to run
 # and build.
 updatedeps:
 	go get -u github.com/mitchellh/gox
@@ -43,7 +43,7 @@ updatedeps:
 	go get -u github.com/jteeuwen/go-bindata/...
 	go list ./... \
 		| xargs go list -f '{{join .Deps "\n"}}' \
-		| grep -v github.com/hashicorp/otto \
+		| grep -v github.com/capgemini/terraform-control \
 		| sort -u \
 		| xargs go get -f -u -v
 

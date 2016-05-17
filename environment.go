@@ -3,7 +3,7 @@ package main
 import (
 	"path/filepath"
 	"github.com/mitchellh/cli"
-	"custom/terraform-control/terraform"
+	"github.com/capgemini/terraform-control/terraform"
 	"github.com/hashicorp/otto/ui"
 	"os"
 	"fmt"
