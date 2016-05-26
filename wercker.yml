@@ -1,0 +1,49 @@
+box: golang
+build:
+  steps:
+    - setup-go-workspace
+    - script:
+        name: go get
+        code: |
+          cd $WERCKER_SOURCE_DIR
+          go version
+          go get -v -t ./...
+    - golint
+    - script:
+        name: go build
+        code: |
+          go build ./...
+    - script:
+        name: go test
+        code: |
+          go test -v ./...
+    - script:
+        name: gofmt
+        code: |
+          FIXED=$(go fmt ./... | wc -l)
+          if [ $FIXED -gt 0 ]; then echo "gofmt - $FIXED file(s) not formatted correctly, please run gofmt to fix this." >&2 && exit 1; fi
+    - script:
+        name: goxc build & archive
+        code: |
+          goxc -tasks='xc archive' -bc 'linux,amd64,386 darwin,amd64,386' -d $WERCKER_OUTPUT_DIR/
+deploy:
+  steps:
+    - script:
+        name: restore release tag
+        code: |
+          export RELEASE_TAG=$(date --utc "+%Y%m%d%H%M")
+    - wercker/github-create-release:
+        token: $GITHUB_TOKEN
+        tag: $RELEASE_TAG
+    - wercker/github-upload-asset:
+        token: $GITHUB_TOKEN
+        file: snapshot/terraform-control_linux_386.tar.gz
+    - wercker/github-upload-asset:
+        token: $GITHUB_TOKEN
+        file: snapshot/terraform-control_linux_amd64.tar.gz
+    - wercker/github-upload-asset:
+        token: $GITHUB_TOKEN
+        file: snapshot/terraform-control_darwin_386.zip
+    - wercker/github-upload-asset:
+        token: $GITHUB_TOKEN
+        file: snapshot/terraform-control_darwin_amd64.zip
