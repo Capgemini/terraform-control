@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"github.com/boltdb/bolt"
 	"encoding/binary"
-	"github.com/capgemini//terraform-control/persistence"
+	"github.com/capgemini/terraform-control/persistence"
 )
 
 var (
