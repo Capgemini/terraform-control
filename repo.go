@@ -37,7 +37,7 @@ func RepoHookHandler(c Change) Change {
 }
 
 func RepoTerraformAction(action Action) error {
-	safeEnvironment := GetSingletonSafeEnvironment(action.Id)
+	safeEnvironment := GetSingletonSafeEnvironment(action.ID)
 	// TODO: Consider similar approach to http://nesv.github.io/golang/2014/02/25/worker-queues-in-go.html
 	go safeEnvironment.Execute(nil, action.SetExitCodes())
 	return nil

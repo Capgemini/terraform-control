@@ -1,18 +1,18 @@
 package main
 
 import (
-	"path/filepath"
-	"github.com/mitchellh/cli"
+	"fmt"
 	"github.com/capgemini/terraform-control/terraform"
 	"github.com/hashicorp/otto/ui"
-	"os"
-	"fmt"
-	"log"
-	"sync"
+	"github.com/mitchellh/cli"
 	"io/ioutil"
-	"strconv"
+	"log"
+	"os"
 	"os/exec"
-	)
+	"path/filepath"
+	"strconv"
+	"sync"
+)
 
 // ErrorPrefix needs setting
 const (
@@ -22,23 +22,23 @@ const (
 
 var (
 	safeEnvironments = make(map[int]*SafeEnvironment)
-	ouputFile 	=	"output" 
-	stateFile 	=	"state"
+	ouputFile        = "output"
+	stateFile        = "state"
 )
 
 type Environment struct {
-	ID        int       `json:"id"`
-	Name      string    `json:"name"`
-	Repo      string    `json:"repo"`
-	Branch 	  string    `json:"branch"`
-	Path      string 	`json:"path"`
-	AutoApply bool		`json:"autoApply"`
+	ID        int    `json:"id"`
+	Name      string `json:"name"`
+	Repo      string `json:"repo"`
+	Branch    string `json:"branch"`
+	Path      string `json:"path"`
+	AutoApply bool   `json:"autoApply"`
 	//TODO: Handle variables dynamically
-	Var1 	string		`json:"var1"`
-	Val1 	string		`json:"val1"`
-	Var2 	string		`json:"var2"`
-	Val2 	string		`json:"val2"`
-	Changes	  []*Change
+	Var1    string `json:"var1"`
+	Val1    string `json:"val1"`
+	Var2    string `json:"var2"`
+	Val2    string `json:"val2"`
+	Changes []*Change
 }
 
 type Environments []Environment
@@ -48,36 +48,36 @@ type SafeEnvironment struct {
 	ID int
 }
 
-func NewSafeEnvironment(id int) (*SafeEnvironment){
+func NewSafeEnvironment(id int) *SafeEnvironment {
 	return &SafeEnvironment{
 		ID: id,
 	}
 }
 
-func GetSingletonSafeEnvironment(id int)(*SafeEnvironment){
-    if (safeEnvironments[id] == nil) {
-			safeEnvironments[id] = NewSafeEnvironment(id)
-    } 
-    return safeEnvironments[id]
+func GetSingletonSafeEnvironment(id int) *SafeEnvironment {
+	if safeEnvironments[id] == nil {
+		safeEnvironments[id] = NewSafeEnvironment(id)
+	}
+	return safeEnvironments[id]
 }
 
-func (e *Environment) GetPathToRepo()(string) {
+func (e *Environment) GetPathToRepo() string {
 	return filepath.Join(config.RootFolder, e.Name)
 }
 
-func (e *Environment) GetPathToFiles()(string) {
+func (e *Environment) GetPathToFiles() string {
 	return filepath.Join(e.GetPathToRepo(), e.Path)
 }
 
-func (e *Environment) GetPathToOuput()(string) {
+func (e *Environment) GetPathToOuput() string {
 	return filepath.Join(e.GetPathToFiles(), ouputFile)
 }
 
-func (e *Environment) GetPathToState()(string) {
+func (e *Environment) GetPathToState() string {
 	return filepath.Join(e.GetPathToFiles(), stateFile)
 }
 
-func (e *Environment) createUI() (ui.Ui) {
+func (e *Environment) createUI() ui.Ui {
 	cliUI := &cli.ColoredUi{
 		OutputColor: cli.UiColorNone,
 		InfoColor:   cli.UiColorNone,
@@ -92,16 +92,16 @@ func (e *Environment) createUI() (ui.Ui) {
 		},
 	}
 
-	tfUI := NewUi(cliUI, e)
-	return tfUi
+	tfUI := NewUI(cliUI, e)
+	return tfUI
 }
 
-func (se *SafeEnvironment) Execute(change *Change, action *Action) (error) {
-  // Agressive locking as we want the same environment to be manipulated only once at a time 
-  se.Lock()
-  defer se.Unlock()
+func (se *SafeEnvironment) Execute(change *Change, action *Action) error {
+	// Agressive locking as we want the same environment to be manipulated only once at a time
+	se.Lock()
+	defer se.Unlock()
 
-	env := RepoFindEnvironment(se.Id)
+	env := RepoFindEnvironment(se.ID)
 	command := action.Command
 	pathToRepo := env.GetPathToRepo()
 	pathToOuput := env.GetPathToOuput()
@@ -115,7 +115,7 @@ func (se *SafeEnvironment) Execute(change *Change, action *Action) (error) {
 		}
 
 		changesChannel := getChangesChannel()
-		changesChannel <- se.Id
+		changesChannel <- se.ID
 	}
 
 	// TODO: Think about allowing apply any change/rollback.
@@ -124,7 +124,7 @@ func (se *SafeEnvironment) Execute(change *Change, action *Action) (error) {
 		change = env.Changes[len(env.Changes)-1]
 	}
 
-  if err := env.Execute(change, command); err != nil {
+	if err := env.Execute(change, command); err != nil {
 		change.Status = action.FailCode
 	} else {
 		change.Status = action.SuccessCode
@@ -143,7 +143,7 @@ func (se *SafeEnvironment) Execute(change *Change, action *Action) (error) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		change.State = string(stateFileContent)		
+		change.State = string(stateFileContent)
 	}
 
 	// Override last change with new info
@@ -153,7 +153,7 @@ func (se *SafeEnvironment) Execute(change *Change, action *Action) (error) {
 	if derr != nil {
 		log.Fatal(derr)
 	}
-	changesChannel <- se.Id
+	changesChannel <- se.ID
 
 	os.RemoveAll(pathToRepo)
 	return nil
@@ -162,9 +162,9 @@ func (se *SafeEnvironment) Execute(change *Change, action *Action) (error) {
 func (e *Environment) Execute(change *Change, command ...string) error {
 
 	pathToRepo := e.GetPathToRepo()
-  pathToFiles := e.GetPathToFiles()
+	pathToFiles := e.GetPathToFiles()
 
-	//TODO: handle variables dynamically 
+	//TODO: handle variables dynamically
 	vars := make(map[string]string)
 	vars[e.Var1] = e.Val1
 	vars[e.Var2] = e.Val2
@@ -187,7 +187,7 @@ func (e *Environment) Execute(change *Change, command ...string) error {
 		log.Printf("Error checking out: %v", err)
 	}
 
-	tfUI := e.createUi()
+	tfUI := e.createUI()
 
 	tf := &terraform.Terraform{
 		Path:      "",
@@ -195,7 +195,7 @@ func (e *Environment) Execute(change *Change, command ...string) error {
 		Ui:        tfUI,
 		Variables: vars,
 		Directory: config.Persistence,
-		StateId:   "env-" + strconv.Itoa(e.Id),
+		StateId:   "env-" + strconv.Itoa(e.ID),
 	}
 
 	tfUI.Header("Executing Terraform to manage infrastructure...")

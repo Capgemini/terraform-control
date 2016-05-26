@@ -5,14 +5,14 @@
 package main
 
 import (
+	"github.com/gorilla/websocket"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
-	"strconv"
 	"path/filepath"
+	"strconv"
 	"time"
-	"github.com/gorilla/websocket"
 )
 
 const (
@@ -30,16 +30,16 @@ const (
 )
 
 var (
-	filename  string
-	upgrader  = websocket.Upgrader{
+	filename string
+	upgrader = websocket.Upgrader{
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
-		CheckOrigin: func(r *http.Request) bool { return true },
+		CheckOrigin:     func(r *http.Request) bool { return true },
 	}
 )
 
 func readFileIfModified(lastMod time.Time, env *Environment) ([]byte, time.Time, error) {
-	filename  = filepath.Join(config.RootFolder, "/repo-" + env.Name, env.Path, "/planOutput")
+	filename = filepath.Join(config.RootFolder, "/repo-"+env.Name, env.Path, "/planOutput")
 	fi, err := os.Stat(filename)
 	if err != nil {
 		return nil, lastMod, err
@@ -80,14 +80,14 @@ func writer(ws *websocket.Conn, lastMod time.Time, env *Environment) {
 	for {
 		select {
 		case envID := <-changesChannel:
-				log.Printf("Channel got something: %v", envID)
-				if envID == env.Id {
-					ws.SetWriteDeadline(time.Now().Add(writeWait))
-					data := []byte(strconv.Itoa(envID))
-					if err := ws.WriteMessage(websocket.TextMessage, data); err != nil {
-						return
-					}					
+			log.Printf("Channel got something: %v", envID)
+			if envID == env.ID {
+				ws.SetWriteDeadline(time.Now().Add(writeWait))
+				data := []byte(strconv.Itoa(envID))
+				if err := ws.WriteMessage(websocket.TextMessage, data); err != nil {
+					return
 				}
+			}
 		case <-fileTicker.C:
 			var p []byte
 			var err error

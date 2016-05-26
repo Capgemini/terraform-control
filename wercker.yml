@@ -8,8 +8,8 @@ build:
           cd $WERCKER_SOURCE_DIR
           go version
           go get -v -t ./...
-    - wallies/ step-golint
-        ignore-rules: [ "should have comment or be unexported" ]
+    - wallies/golint:
+        ignore-rules: "[ \"should have comment or be unexported\" ]"
     - script:
         name: go build
         code: |
@@ -24,9 +24,9 @@ build:
           FIXED=$(go fmt ./... | wc -l)
           if [ $FIXED -gt 0 ]; then echo "gofmt - $FIXED file(s) not formatted correctly, please run gofmt to fix this." >&2 && exit 1; fi
     - script:
-        name: goxc build & archive
-        code: |
-          goxc -tasks='xc archive' -bc 'linux,amd64,386 darwin,amd64,386' -d $WERCKER_OUTPUT_DIR/
+      name: go build
+      code: |
+        GOOS=linux GOARCH=amd64 go build -o main
 deploy:
   steps:
     - script:
@@ -38,13 +38,4 @@ deploy:
         tag: $RELEASE_TAG
     - wercker/github-upload-asset:
         token: $GITHUB_TOKEN
-        file: snapshot/terraform-control_linux_386.tar.gz
-    - wercker/github-upload-asset:
-        token: $GITHUB_TOKEN
         file: snapshot/terraform-control_linux_amd64.tar.gz
-    - wercker/github-upload-asset:
-        token: $GITHUB_TOKEN
-        file: snapshot/terraform-control_darwin_386.zip
-    - wercker/github-upload-asset:
-        token: $GITHUB_TOKEN
-        file: snapshot/terraform-control_darwin_amd64.zip

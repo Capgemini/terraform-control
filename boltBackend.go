@@ -2,19 +2,19 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
-	"os"
-	"io"
-	"path/filepath"
-	"github.com/boltdb/bolt"
 	"encoding/binary"
+	"encoding/json"
+	"github.com/boltdb/bolt"
 	"github.com/capgemini/terraform-control/persistence"
+	"io"
+	"os"
+	"path/filepath"
 )
 
 var (
-	boltEnvironmentsBucket  = []byte("environments")
-	boltBlobBucket  = []byte("blob")
-	boltBuckets     = [][]byte{
+	boltEnvironmentsBucket = []byte("environments")
+	boltBlobBucket         = []byte("blob")
+	boltBuckets            = [][]byte{
 		boltEnvironmentsBucket,
 		boltBlobBucket,
 	}
@@ -27,7 +27,7 @@ var (
 // BoltBackend - directory where data will be written. This directory will be
 // created if it doesn't exist.
 type BoltBackend struct {
-  Dir string
+	Dir string
 }
 
 // GetBlob Function to persist in bolt
@@ -98,19 +98,19 @@ func (b *BoltBackend) GetAllEnvironments() ([]*Environment, error) {
 			return nil
 		}
 
-	    c := bucket.Cursor()
+		c := bucket.Cursor()
 
-	    count := 0
-	    for k, v := c.First(); k != nil; k, v = c.Next() {
-	        //fmt.Printf("key=%s, value=%s\n", k, v)
-	        env = &Environment{}
-	        err := b.structRead(env, v)
-	        if err != nil {
+		count := 0
+		for k, v := c.First(); k != nil; k, v = c.Next() {
+			//fmt.Printf("key=%s, value=%s\n", k, v)
+			env = &Environment{}
+			err := b.structRead(env, v)
+			if err != nil {
 				return err
-	        }
-	        result = append(result, env)
-	        count = count+1
-	    }
+			}
+			result = append(result, env)
+			count = count + 1
+		}
 		return nil
 	})
 
@@ -173,9 +173,9 @@ func (b *BoltBackend) PutEnvironment(environment *Environment) error {
 			return err
 		}
 
-		if environment.Id == 0 {
+		if environment.ID == 0 {
 			id, _ := bucket.NextSequence()
-	        environment.Id = int(id)
+			environment.ID = int(id)
 		}
 
 		data, err := b.structData(environment)
@@ -183,15 +183,15 @@ func (b *BoltBackend) PutEnvironment(environment *Environment) error {
 			return err
 		}
 
-		return bucket.Put(itob(environment.Id), data)
+		return bucket.Put(itob(environment.ID), data)
 	})
 }
 
 // itob does some maths function
 func itob(v int) []byte {
-    b := make([]byte, 8)
-    binary.BigEndian.PutUint64(b, uint64(v))
-    return b
+	b := make([]byte, 8)
+	binary.BigEndian.PutUint64(b, uint64(v))
+	return b
 }
 
 // db returns the database handle, and sets up the DB if it has never

@@ -3,12 +3,12 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/gorilla/mux"
 	"io"
 	"io/ioutil"
 	"net/http"
-	"strconv"
-	"github.com/gorilla/mux"
 	"os/exec"
+	"strconv"
 )
 
 type flushWriter struct {
@@ -46,7 +46,7 @@ func EnvironmentShow(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 	environment := RepoFindEnvironment(environmentID)
-	if environment.Id > 0 {
+	if environment.ID > 0 {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(http.StatusOK)
 		if err := json.NewEncoder(w).Encode(environment); err != nil {
@@ -156,4 +156,3 @@ func TerraformOutput(w http.ResponseWriter, r *http.Request) {
 	cmd.Stderr = &fw
 	cmd.Run()
 }
-

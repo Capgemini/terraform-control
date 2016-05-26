@@ -6,7 +6,7 @@ import "fmt"
 import "os"
 
 func TestGetPathToRepo(t *testing.T) {
-	e := &Environment {
+	e := &Environment{
 		Name: "testEnv",
 	}
 
