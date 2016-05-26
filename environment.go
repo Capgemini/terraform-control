@@ -14,19 +14,20 @@ import (
 	"os/exec"
 	)
 
+// ErrorPrefix needs setting
 const (
 	ErrorPrefix  = "e:"
 	OutputPrefix = "o:"
-	)
+)
 
 var (
 	safeEnvironments = make(map[int]*SafeEnvironment)
 	ouputFile 	=	"output" 
 	stateFile 	=	"state"
-	)
+)
 
 type Environment struct {
-	Id        int       `json:"id"`
+	ID        int       `json:"id"`
 	Name      string    `json:"name"`
 	Repo      string    `json:"repo"`
 	Branch 	  string    `json:"branch"`
@@ -44,18 +45,18 @@ type Environments []Environment
 
 type SafeEnvironment struct {
 	sync.Mutex
-	Id int
+	ID int
 }
 
 func NewSafeEnvironment(id int) (*SafeEnvironment){
 	return &SafeEnvironment{
-		Id: id,
+		ID: id,
 	}
 }
 
 func GetSingletonSafeEnvironment(id int)(*SafeEnvironment){
     if (safeEnvironments[id] == nil) {
-		safeEnvironments[id] = NewSafeEnvironment(id)
+			safeEnvironments[id] = NewSafeEnvironment(id)
     } 
     return safeEnvironments[id]
 }
@@ -76,8 +77,8 @@ func (e *Environment) GetPathToState()(string) {
 	return filepath.Join(e.GetPathToFiles(), stateFile)
 }
 
-func (e *Environment) createUi() (ui.Ui) {
-	cliUi := &cli.ColoredUi{
+func (e *Environment) createUI() (ui.Ui) {
+	cliUI := &cli.ColoredUi{
 		OutputColor: cli.UiColorNone,
 		InfoColor:   cli.UiColorNone,
 		ErrorColor:  cli.UiColorRed,
@@ -91,14 +92,14 @@ func (e *Environment) createUi() (ui.Ui) {
 		},
 	}
 
-	tfUi := NewUi(cliUi, e)
+	tfUI := NewUi(cliUI, e)
 	return tfUi
 }
 
 func (se *SafeEnvironment) Execute(change *Change, action *Action) (error) {
-    // Agressive locking as we want the same environment to be manipulated only once at a time 
-    se.Lock()
-    defer se.Unlock()
+  // Agressive locking as we want the same environment to be manipulated only once at a time 
+  se.Lock()
+  defer se.Unlock()
 
 	env := RepoFindEnvironment(se.Id)
 	command := action.Command
@@ -123,7 +124,7 @@ func (se *SafeEnvironment) Execute(change *Change, action *Action) (error) {
 		change = env.Changes[len(env.Changes)-1]
 	}
 
-    if err := env.Execute(change, command); err != nil {
+  if err := env.Execute(change, command); err != nil {
 		change.Status = action.FailCode
 	} else {
 		change.Status = action.SuccessCode
@@ -132,15 +133,15 @@ func (se *SafeEnvironment) Execute(change *Change, action *Action) (error) {
 	// TODO: consider a better way of doing this by buffering or something
 	// I cant be bothered today as I'm feeling so sick :O
 	planOuputContent, err := ioutil.ReadFile(pathToOuput)
-		if err != nil {
-		    log.Fatal(err)
-		}
+	if err != nil {
+		log.Fatal(err)
+	}
 	change.PlanOutput = string(planOuputContent)
 
 	if command == "apply" {
 		stateFileContent, err := ioutil.ReadFile(pathToState)
 		if err != nil {
-		    log.Fatal(err)
+			log.Fatal(err)
 		}
 		change.State = string(stateFileContent)		
 	}
@@ -161,7 +162,7 @@ func (se *SafeEnvironment) Execute(change *Change, action *Action) (error) {
 func (e *Environment) Execute(change *Change, command ...string) error {
 
 	pathToRepo := e.GetPathToRepo()
-    pathToFiles := e.GetPathToFiles()
+  pathToFiles := e.GetPathToFiles()
 
 	//TODO: handle variables dynamically 
 	vars := make(map[string]string)
@@ -186,19 +187,19 @@ func (e *Environment) Execute(change *Change, command ...string) error {
 		log.Printf("Error checking out: %v", err)
 	}
 
-	tfUi := e.createUi()
+	tfUI := e.createUi()
 
 	tf := &terraform.Terraform{
 		Path:      "",
 		Dir:       pathToFiles,
-		Ui:        tfUi,
+		Ui:        tfUI,
 		Variables: vars,
 		Directory: config.Persistence,
 		StateId:   "env-" + strconv.Itoa(e.Id),
 	}
 
-	tfUi.Header("Executing Terraform to manage infrastructure...")
-	tfUi.Message("Raw Terraform output will begin streaming in below.")
+	tfUI.Header("Executing Terraform to manage infrastructure...")
+	tfUI.Message("Raw Terraform output will begin streaming in below.")
 
 	// Start the Terraform command
 	err = tf.Execute(command...)
@@ -208,7 +209,7 @@ func (e *Environment) Execute(change *Change, command ...string) error {
 		return err
 	}
 
-	tfUi.Header("Terraform execution complete. Saving results...")
+	tfUI.Header("Terraform execution complete. Saving results...")
 
 	return nil
 }

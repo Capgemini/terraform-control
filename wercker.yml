@@ -8,7 +8,8 @@ build:
           cd $WERCKER_SOURCE_DIR
           go version
           go get -v -t ./...
-    - golint
+    - wallies/ step-golint
+        ignore-rules: [ "should have comment or be unexported" ]
     - script:
         name: go build
         code: |

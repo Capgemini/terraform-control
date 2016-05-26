@@ -79,11 +79,11 @@ func writer(ws *websocket.Conn, lastMod time.Time, env *Environment) {
 	}()
 	for {
 		select {
-		case envId := <-changesChannel:
-				log.Printf("Channel got something: %v", envId)
-				if envId == env.Id {
+		case envID := <-changesChannel:
+				log.Printf("Channel got something: %v", envID)
+				if envID == env.Id {
 					ws.SetWriteDeadline(time.Now().Add(writeWait))
-					data := []byte(strconv.Itoa(envId))
+					data := []byte(strconv.Itoa(envID))
 					if err := ws.WriteMessage(websocket.TextMessage, data); err != nil {
 						return
 					}					
@@ -133,12 +133,12 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 		lastMod = time.Unix(0, n)
 	}
 
-	var envId int
-	if envId, err = strconv.Atoi(r.FormValue("envId")); err != nil {
+	var envID int
+	if envID, err = strconv.Atoi(r.FormValue("envID")); err != nil {
 		log.Println(err)
 	}
 
-	env := RepoFindEnvironment(envId)
+	env := RepoFindEnvironment(envID)
 	go writer(ws, lastMod, env)
 	reader(ws)
 }

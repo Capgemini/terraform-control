@@ -7,8 +7,9 @@ import (
 )
 
 // Hacky for demo purposes for sending changes updates to the server socket
-// so the browser gets updated
-var changesChannel chan int = make(chan int, 10)
+// so the browser gets updated. 
+// type chan int is inferred from the right-hand side
+var changesChannel = make(chan int, 10)
 func getChangesChannel() (chan int) {
 	return changesChannel
 }

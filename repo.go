@@ -18,7 +18,7 @@ func RepoFindEnvironment(id int) *Environment {
 	return e
 }
 
-//this is bad, I don't think it passes race condtions
+//RepoCreateEnvironment - this is bad, I don't think it passes race condtions
 func RepoCreateEnvironment(e Environment) Environment {
 	derr := config.Persistence.PutEnvironment(&e)
 	if derr != nil {

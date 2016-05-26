@@ -24,12 +24,13 @@ var (
 	boltDataVersion byte = 1
 )
 
+// BoltBackend - directory where data will be written. This directory will be
+// created if it doesn't exist.
 type BoltBackend struct {
-	// Directory where data will be written. This directory will be
-	// created if it doesn't exist.
-	Dir string
+  Dir string
 }
 
+// GetBlob Function to persist in bolt
 func (b *BoltBackend) GetBlob(k string) (*persistence.BlobData, error) {
 	db, err := b.db()
 	if err != nil {
@@ -59,6 +60,7 @@ func (b *BoltBackend) GetBlob(k string) (*persistence.BlobData, error) {
 	}, nil
 }
 
+// PutBlob function to persist data and update bucket
 func (b *BoltBackend) PutBlob(k string, d *persistence.BlobData) error {
 	db, err := b.db()
 	if err != nil {
@@ -77,6 +79,7 @@ func (b *BoltBackend) PutBlob(k string, d *persistence.BlobData) error {
 	})
 }
 
+// GetAllEnvironments returns all environments persisted in bolt
 func (b *BoltBackend) GetAllEnvironments() ([]*Environment, error) {
 	db, err := b.db()
 	if err != nil {
@@ -118,6 +121,7 @@ func (b *BoltBackend) GetAllEnvironments() ([]*Environment, error) {
 	return result, nil
 }
 
+// GetEnvironment returns environment specific details stored
 func (b *BoltBackend) GetEnvironment(id int) (*Environment, error) {
 	db, err := b.db()
 	if err != nil {
@@ -151,6 +155,7 @@ func (b *BoltBackend) GetEnvironment(id int) (*Environment, error) {
 	return result, nil
 }
 
+// PutEnvironment adds or changes details for existing environment
 func (b *BoltBackend) PutEnvironment(environment *Environment) error {
 
 	db, err := b.db()
@@ -182,6 +187,7 @@ func (b *BoltBackend) PutEnvironment(environment *Environment) error {
 	})
 }
 
+// itob does some maths function
 func itob(v int) []byte {
     b := make([]byte, 8)
     binary.BigEndian.PutUint64(b, uint64(v))

@@ -40,12 +40,12 @@ func EnvironmentIndex(w http.ResponseWriter, r *http.Request) {
 
 func EnvironmentShow(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	var environmentId int
+	var environmentID int
 	var err error
-	if environmentId, err = strconv.Atoi(vars["environmentId"]); err != nil {
+	if environmentID, err = strconv.Atoi(vars["environmentId"]); err != nil {
 		panic(err)
 	}
-	environment := RepoFindEnvironment(environmentId)
+	environment := RepoFindEnvironment(environmentID)
 	if environment.Id > 0 {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(http.StatusOK)
@@ -65,7 +65,7 @@ func EnvironmentShow(w http.ResponseWriter, r *http.Request) {
 }
 
 /*
-Test with this curl command:
+EnvironmentCreate - Test with this curl command:
 curl -H "Content-Type: application/json" -d '{"name":"New Todo"}' http://localhost:8080/todos
 */
 func EnvironmentCreate(w http.ResponseWriter, r *http.Request) {

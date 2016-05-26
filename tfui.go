@@ -28,7 +28,7 @@ var (
 	defaultInputWriter io.Writer
 )
 
-func NewUi(raw cli.Ui, env *Environment) ui.Ui {
+func NewUI(raw cli.Ui, env *Environment) ui.Ui {
 	return &ui.Styled{
 		Ui: &cliUi{
 			CliUi: raw,
@@ -37,11 +37,11 @@ func NewUi(raw cli.Ui, env *Environment) ui.Ui {
 	}
 }
 
-// cliUi is a wrapper around a cli.Ui that implements the otto.Ui
-// interface. It is unexported since the NewUi method should be used
+// cliUI is a wrapper around a cli.Ui that implements the otto.Ui
+// interface. It is unexported since the NewUI method should be used
 // instead.
-type cliUi struct {
-	CliUi cli.Ui
+type cliUI struct {
+	CliUI cli.Ui
 	env *Environment
 	// Reader and Writer are used for Input
 	Reader io.Reader
@@ -96,7 +96,7 @@ func (u *cliUi) Raw(msg string) {
 	check(err)
 }
 
-func (i *cliUi) Input(opts *ui.InputOpts) (string, error) {
+func (i *cliUI) Input(opts *ui.InputOpts) (string, error) {
 	// If any of the configured EnvVars are set, we don't ask for input.
 	if value := opts.EnvVarValue(); value != "" {
 		return value, nil
