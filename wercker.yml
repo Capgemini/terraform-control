@@ -8,7 +8,8 @@ build:
           cd $WERCKER_SOURCE_DIR
           go version
           go get -v -t ./...
-    - golint
+    - wallies/golint:
+        ignore-rules: "[ \"should have comment or be unexported\" ]"
     - script:
         name: go build
         code: |
@@ -16,16 +17,36 @@ build:
     - script:
         name: go test
         code: |
-          go test -v ./...
+          go get launchpad.net/gocheck
+          go get github.com/axw/gocov/gocov
+          # Execute actual tests and store coverage result
+          gocov test ./... > coverage.json
+    - script:
+        name: Coverage
+        code: |
+          go get github.com/matm/gocov-html
+          gocov report coverage.json
+          gocov-html coverage.json > $WERCKER_REPORT_ARTIFACTS_DIR/coverage.html
+    - script:
+        name: Coveralls.io
+        code: |
+          # The COVERALLS_TOKEN is set in the project at
+          # wercker as project environment variable.
+          go get github.com/mattn/goveralls
+          goveralls -service='wercker.com' -repotoken $COVERALLS_TOKEN
     - script:
         name: gofmt
         code: |
           FIXED=$(go fmt ./... | wc -l)
           if [ $FIXED -gt 0 ]; then echo "gofmt - $FIXED file(s) not formatted correctly, please run gofmt to fix this." >&2 && exit 1; fi
     - script:
-        name: goxc build & archive
+        name: Benchmark
         code: |
-          goxc -tasks='xc archive' -bc 'linux,amd64,386 darwin,amd64,386' -d $WERCKER_OUTPUT_DIR/
+          go test -test.bench ./...
+    - script:
+        name: go build
+        code: |
+          GOOS=linux GOARCH=amd64 go build -o main
 deploy:
   steps:
     - script:
@@ -37,13 +58,4 @@ deploy:
         tag: $RELEASE_TAG
     - wercker/github-upload-asset:
         token: $GITHUB_TOKEN
-        file: snapshot/terraform-control_linux_386.tar.gz
-    - wercker/github-upload-asset:
-        token: $GITHUB_TOKEN
         file: snapshot/terraform-control_linux_amd64.tar.gz
-    - wercker/github-upload-asset:
-        token: $GITHUB_TOKEN
-        file: snapshot/terraform-control_darwin_386.zip
-    - wercker/github-upload-asset:
-        token: $GITHUB_TOKEN
-        file: snapshot/terraform-control_darwin_amd64.zip

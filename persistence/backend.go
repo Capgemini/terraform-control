@@ -6,7 +6,6 @@ import (
 )
 
 type Backend interface {
-
 	PutBlob(string, *BlobData) error
 	GetBlob(string) (*BlobData, error)
 

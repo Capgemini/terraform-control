@@ -1,28 +1,31 @@
 package main
 
+// Exported constants
 const (
-	PLAN_SUCCESS   	= 1
-	PLAN_FAIL   	= 100
-	APPLY_SUCCESS   = 2
-	APPLY_FAIL		= 200
-	REFRESH = 3
+	PlanSuccess  = 1
+	PlanFail     = 100
+	ApplySuccess = 2
+	ApplyFail    = 200
+	Refresh      = 3
 )
 
+// Action exporting exitCodes for use later
 type Action struct {
-	Id 				int       `json:"id"`
-	Command      	string    `json:"action"`
-	SuccessCode		int
-	FailCode		int
+	ID          int    `json:"id"`
+	Command     string `json:"action"`
+	SuccessCode int
+	FailCode    int
 }
 
-func (a *Action) SetExitCodes()(*Action) {
+// SetExitCodes to use the Action for apply or plan
+func (a *Action) SetExitCodes() *Action {
 	switch a.Command {
 	case "apply":
-		a.SuccessCode = APPLY_SUCCESS
-		a.SuccessCode = APPLY_FAIL
+		a.SuccessCode = ApplySuccess
+		a.SuccessCode = ApplyFail
 	case "plan":
-		a.SuccessCode = PLAN_SUCCESS
-		a.SuccessCode = PLAN_FAIL
+		a.SuccessCode = PlanSuccess
+		a.SuccessCode = PlanFail
 	}
 
 	return a

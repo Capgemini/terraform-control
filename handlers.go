@@ -3,12 +3,12 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/gorilla/mux"
 	"io"
 	"io/ioutil"
 	"net/http"
-	"strconv"
-	"github.com/gorilla/mux"
 	"os/exec"
+	"strconv"
 )
 
 type flushWriter struct {
@@ -40,13 +40,13 @@ func EnvironmentIndex(w http.ResponseWriter, r *http.Request) {
 
 func EnvironmentShow(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	var environmentId int
+	var environmentID int
 	var err error
-	if environmentId, err = strconv.Atoi(vars["environmentId"]); err != nil {
+	if environmentID, err = strconv.Atoi(vars["environmentId"]); err != nil {
 		panic(err)
 	}
-	environment := RepoFindEnvironment(environmentId)
-	if environment.Id > 0 {
+	environment := RepoFindEnvironment(environmentID)
+	if environment.ID > 0 {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(http.StatusOK)
 		if err := json.NewEncoder(w).Encode(environment); err != nil {
@@ -65,7 +65,7 @@ func EnvironmentShow(w http.ResponseWriter, r *http.Request) {
 }
 
 /*
-Test with this curl command:
+EnvironmentCreate - Test with this curl command:
 curl -H "Content-Type: application/json" -d '{"name":"New Todo"}' http://localhost:8080/todos
 */
 func EnvironmentCreate(w http.ResponseWriter, r *http.Request) {
@@ -156,4 +156,3 @@ func TerraformOutput(w http.ResponseWriter, r *http.Request) {
 	cmd.Stderr = &fw
 	cmd.Run()
 }
-

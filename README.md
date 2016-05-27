@@ -1,6 +1,8 @@
 # Terraform-Control
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/capgemini/terraform-control)](https://goreportcard.com/report/github.com/capgemini/terraform-control)
+[![wercker status](https://app.wercker.com/status/15890eedfe803a8ff9d9044261c0eea7/m "wercker status")](https://app.wercker.com/project/bykey/15890eedfe803a8ff9d9044261c0eea7)
+[![Coverage Status](https://coveralls.io/repos/github/Capgemini/terraform-control/badge.svg?branch=HEAD)](https://coveralls.io/github/Capgemini/terraform-control?branch=HEAD)
 
 
 Terraform-Control is a tool for managing and deploying your infrastructure with terraform in a collaborative way driven by Continuous integration while keeping track of the state and history of your infrastructure.

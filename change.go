@@ -3,15 +3,15 @@ package main
 import (
 	"github.com/boltdb/bolt"
 	"log"
-	)
+)
 
 type Change struct {
-	Repository	map[string]interface{}	`json:"repository"`
-	Commits		[]interface{}	`json:"commits"`
-	HeadCommit	interface{}	`json:"head_commit"`
-	PlanOutput	string
-	State		string
-	Status		int
+	Repository map[string]interface{} `json:"repository"`
+	Commits    []interface{}          `json:"commits"`
+	HeadCommit interface{}            `json:"head_commit"`
+	PlanOutput string
+	State      string
+	Status     int
 }
 
 type Changes []Change
@@ -32,26 +32,25 @@ func (change *Change) handleHook(b *BoltBackend) error {
 			return err
 		}
 
-	    c := bucket.Cursor()
+		c := bucket.Cursor()
 		var env *Environment
-	    for k, v := c.First(); k != nil; k, v = c.Next() {
-	        env = &Environment{}
-	        err := b.structRead(env, v)
-	        if err != nil {
+		for k, v := c.First(); k != nil; k, v = c.Next() {
+			env = &Environment{}
+			err := b.structRead(env, v)
+			if err != nil {
 				return err
-	        }
+			}
 
-	        if (env.Repo == change.Repository["ssh_url"] || env.Repo == change.Repository["git_url"] || env.Repo == change.Repository["git_url"] || env.Repo == change.Repository["html_url"]) {
-                log.Printf("Triggering environment changes for repo: %v", env.Repo)
-		        safeEnvironment := GetSingletonSafeEnvironment(env.Id)
+			if env.Repo == change.Repository["ssh_url"] || env.Repo == change.Repository["git_url"] || env.Repo == change.Repository["git_url"] || env.Repo == change.Repository["html_url"] {
+				log.Printf("Triggering environment changes for repo: %v", env.Repo)
+				safeEnvironment := GetSingletonSafeEnvironment(env.ID)
 				// TODO: Consider similar approach to http://nesv.github.io/golang/2014/02/25/worker-queues-in-go.html
-                action := &Action {
-                	Command: "plan",
-
-                }
-                go safeEnvironment.Execute(change, action.SetExitCodes())
-	        }
-	    }
+				action := &Action{
+					Command: "plan",
+				}
+				go safeEnvironment.Execute(change, action.SetExitCodes())
+			}
+		}
 		return nil
 	})
 }

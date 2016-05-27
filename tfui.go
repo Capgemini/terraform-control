@@ -5,20 +5,20 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/hashicorp/otto/ui"
+	"github.com/hashicorp/vault/helper/password"
+	"github.com/mitchellh/cli"
 	"io"
 	"log"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strings"
 	"sync"
-	"path/filepath"
-	"github.com/hashicorp/otto/ui"
-	"github.com/hashicorp/vault/helper/password"
-	"github.com/mitchellh/cli"
 	// "unicode/utf8"
 )
 
-// TODO: this is a hacky, hacky on otto code in order 
+// TODO: this is a hacky, hacky on otto code in order
 // to write into a file the terraform output by reusing
 // github.com/mitchellh/cli and github.com/hashicorp/otto/ui
 // We want to write our own output managing funcionality
@@ -28,21 +28,21 @@ var (
 	defaultInputWriter io.Writer
 )
 
-func NewUi(raw cli.Ui, env *Environment) ui.Ui {
+func NewUI(raw cli.Ui, env *Environment) ui.Ui {
 	return &ui.Styled{
-		Ui: &cliUi{
-			CliUi: raw,
-			env: env,
+		Ui: &cliUI{
+			CliUI: raw,
+			env:   env,
 		},
 	}
 }
 
-// cliUi is a wrapper around a cli.Ui that implements the otto.Ui
-// interface. It is unexported since the NewUi method should be used
+// cliUI is a wrapper around a cli.Ui that implements the otto.Ui
+// interface. It is unexported since the NewUI method should be used
 // instead.
-type cliUi struct {
-	CliUi cli.Ui
-	env *Environment
+type cliUI struct {
+	CliUI cli.Ui
+	env   *Environment
 	// Reader and Writer are used for Input
 	Reader io.Reader
 	Writer io.Writer
@@ -51,17 +51,17 @@ type cliUi struct {
 	l           sync.Mutex
 }
 
-func (u *cliUi) Header(msg string) {
-	u.CliUi.Output(ui.Colorize(msg))
+func (u *cliUI) Header(msg string) {
+	u.CliUI.Output(ui.Colorize(msg))
 }
 
-func (u *cliUi) Message(msg string) {
-	u.CliUi.Output(ui.Colorize(msg))
+func (u *cliUI) Message(msg string) {
+	u.CliUI.Output(ui.Colorize(msg))
 }
 
-func (u *cliUi) createFile() {
+func (u *cliUI) createFile() {
 	// detect if file exists
-	path := filepath.Join(config.RootFolder, "/repo-" + u.env.Name, u.env.Path, "/planOutput")
+	path := filepath.Join(config.RootFolder, "/repo-"+u.env.Name, u.env.Path, "/planOutput")
 	var _, err = os.Stat(path)
 
 	// create file if not exists
@@ -73,30 +73,30 @@ func (u *cliUi) createFile() {
 }
 
 func check(e error) {
-    if e != nil {
-        panic(e)
-    }
+	if e != nil {
+		panic(e)
+	}
 }
 
-func (u *cliUi) Raw(msg string) {
+func (u *cliUI) Raw(msg string) {
 	u.createFile()
-	var file, err = os.OpenFile(filepath.Join(config.RootFolder, "/repo-" + u.env.Name, u.env.Path, "/planOutput"), os.O_APPEND|os.O_RDWR, 0644)
+	var file, err = os.OpenFile(filepath.Join(config.RootFolder, "/repo-"+u.env.Name, u.env.Path, "/planOutput"), os.O_APPEND|os.O_RDWR, 0644)
 	check(err)
 
 	defer file.Close()
-    check(err)
+	check(err)
 
-    _, err = file.WriteString(msg)
-    fmt.Print(msg)
-    if err != nil {
-    	fmt.Print(err)
-    }
+	_, err = file.WriteString(msg)
+	fmt.Print(msg)
+	if err != nil {
+		fmt.Print(err)
+	}
 
-    err = file.Sync()
+	err = file.Sync()
 	check(err)
 }
 
-func (i *cliUi) Input(opts *ui.InputOpts) (string, error) {
+func (i *cliUI) Input(opts *ui.InputOpts) (string, error) {
 	// If any of the configured EnvVars are set, we don't ask for input.
 	if value := opts.EnvVarValue(); value != "" {
 		return value, nil

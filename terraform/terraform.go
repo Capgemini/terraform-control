@@ -38,7 +38,7 @@ type Terraform struct {
 
 	Directory persistence.Backend
 
-	StateId   string
+	StateId string
 }
 
 // Execute executes a raw Terraform command
@@ -63,7 +63,6 @@ func (t *Terraform) Execute(commandRaw ...string) error {
 
 		// Append the varfile onto our command.
 		command = append(command, "-var-file", varfile)
-
 
 		// Log some of the vars we're using
 		for k, _ := range t.Variables {
@@ -109,7 +108,7 @@ func (t *Terraform) Execute(commandRaw ...string) error {
 
 		// Append the state to the args
 		command = append(command, "-state", stateOldPath)
-		
+
 		if command[0] == "apply" {
 			command = append(command, "-state-out", statePath)
 		}
@@ -131,7 +130,6 @@ func (t *Terraform) Execute(commandRaw ...string) error {
 		path = t.Path
 	}
 
-
 	// Get terraform modules
 	cmd := exec.Command(path, "get")
 	cmd.Dir = t.Dir
@@ -149,7 +147,6 @@ func (t *Terraform) Execute(commandRaw ...string) error {
 	if err != nil {
 		err = fmt.Errorf("Error running Terraform for getting modules: %s", err)
 	}
-
 
 	cmd = exec.Command(path, command...)
 	cmd.Dir = t.Dir
