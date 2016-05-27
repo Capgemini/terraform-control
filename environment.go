@@ -97,7 +97,7 @@ func (e *Environment) createUI() ui.Ui {
 }
 
 func (se *SafeEnvironment) Execute(change *Change, action *Action) error {
-	// Agressive locking as we want the same environment to be manipulated only once at a time
+	// Aggressive locking as we want the same environment to be manipulated only once at a time
 	se.Lock()
 	defer se.Unlock()
 
