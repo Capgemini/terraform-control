@@ -23,3 +23,7 @@ We have reused loads of the [Otto](https://github.com/hashicorp/otto/) code for 
 ## Web UI
 
 ![web-ui](docs/terraform-control-ui.gif)
+
+## Blog
+
+https://capgemini.github.io/devops/Controlling-the-state-of-your-infrastructure/
